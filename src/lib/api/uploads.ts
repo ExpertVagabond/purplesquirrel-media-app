@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { apiClient } from './client';
 import type { Upload, UploadStatus, CompleteUploadParams } from './types';
 
