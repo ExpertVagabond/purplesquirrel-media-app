@@ -111,3 +111,72 @@ export interface CompleteUploadParams {
   category?: string;
   autoTranscribe?: boolean;
 }
+
+// Comments
+export interface Comment {
+  id: string;
+  videoId: string;
+  userId: string;
+  user: Pick<User, 'id' | 'walletAddress' | 'username' | 'avatar'>;
+  text: string;
+  likes: number;
+  liked: boolean;
+  parentId: string | null;
+  replyCount: number;
+  createdAt: string;
+}
+
+export interface CreateCommentParams {
+  text: string;
+  parentId?: string;
+}
+
+// Likes (video-level already in videos.ts, this is for comment likes)
+export interface LikeStatus {
+  liked: boolean;
+  totalLikes: number;
+}
+
+// Tips / Payments
+export type TipStatus = 'pending' | 'confirmed' | 'failed';
+
+export interface Tip {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  videoId: string | null;
+  amount: number; // lamports
+  signature: string; // Solana tx signature
+  status: TipStatus;
+  message: string | null;
+  createdAt: string;
+}
+
+export interface CreateTipParams {
+  toUserId: string;
+  videoId?: string;
+  amount: number; // lamports
+  signature: string;
+  message?: string;
+}
+
+export interface TipSummary {
+  totalReceived: number; // lamports
+  totalSent: number; // lamports
+  tipCount: number;
+}
+
+// Live Streams (placeholder for future)
+export type LiveStreamStatus = 'idle' | 'live' | 'ended';
+
+export interface LiveStream {
+  id: string;
+  creatorId: string;
+  creator: Pick<User, 'id' | 'walletAddress' | 'username' | 'avatar'>;
+  title: string;
+  status: LiveStreamStatus;
+  viewerCount: number;
+  streamUrl: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+}

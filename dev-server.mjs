@@ -15,6 +15,10 @@ const nonces = new Map();
 const users = new Map();
 const videos = new Map();
 const tokens = new Map(); // token -> userId
+const comments = new Map(); // commentId -> comment
+const videoComments = new Map(); // videoId -> [commentId]
+const videoLikes = new Map(); // `${userId}:${videoId}` -> boolean
+const tips = []; // tip records
 
 function generateToken() {
   return randomBytes(32).toString('hex');
@@ -90,6 +94,36 @@ function seedData() {
 }
 
 seedData();
+
+// Seed demo comments on the first video
+(function seedComments() {
+  const firstVideoId = [...videos.keys()][0];
+  if (!firstVideoId) return;
+  const demoUser = users.get('demo_user_1');
+  const sampleComments = [
+    'This platform is exactly what Web3 needs!',
+    'Great introduction video. When is the next one?',
+    'Love the decentralized approach to video hosting.',
+  ];
+  for (const text of sampleComments) {
+    const c = {
+      id: randomUUID(),
+      videoId: firstVideoId,
+      userId: demoUser.id,
+      user: { id: demoUser.id, walletAddress: demoUser.walletAddress, username: demoUser.username, avatar: demoUser.avatar },
+      text,
+      likes: Math.floor(Math.random() * 20),
+      liked: false,
+      parentId: null,
+      replyCount: 0,
+      createdAt: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+    };
+    comments.set(c.id, c);
+    const ids = videoComments.get(firstVideoId) || [];
+    ids.push(c.id);
+    videoComments.set(firstVideoId, ids);
+  }
+})();
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
@@ -261,6 +295,120 @@ const server = createServer(async (req, res) => {
     if (!user) return jsonResponse(res, { error: 'User not found' }, 404);
     const userVideos = [...videos.values()].filter((v) => v.creatorId === user.id);
     return jsonResponse(res, { ...user, videoCount: userVideos.length });
+  }
+
+  // COMMENTS: GET /v1/videos/:id/comments
+  const commentsGetMatch = path.match(/^\/v1\/videos\/([^/]+)\/comments$/);
+  if (commentsGetMatch && method === 'GET') {
+    const videoId = commentsGetMatch[1];
+    const ids = videoComments.get(videoId) || [];
+    const items = ids.map((id) => comments.get(id)).filter(Boolean);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '20');
+    const start = (page - 1) * limit;
+    return jsonResponse(res, {
+      data: items.slice(start, start + limit),
+      total: items.length,
+      page,
+      limit,
+      hasMore: start + limit < items.length,
+    });
+  }
+
+  // COMMENTS: POST /v1/videos/:id/comments
+  if (commentsGetMatch && method === 'POST') {
+    const user = getUserFromToken(req);
+    if (!user) return jsonResponse(res, { error: 'Unauthorized' }, 401);
+    const videoId = commentsGetMatch[1];
+    const body = await parseBody(req);
+    const comment = {
+      id: randomUUID(),
+      videoId,
+      userId: user.id,
+      user: { id: user.id, walletAddress: user.walletAddress, username: user.username, avatar: user.avatar },
+      text: body.text,
+      likes: 0,
+      liked: false,
+      parentId: body.parentId || null,
+      replyCount: 0,
+      createdAt: new Date().toISOString(),
+    };
+    comments.set(comment.id, comment);
+    const ids = videoComments.get(videoId) || [];
+    ids.unshift(comment.id);
+    videoComments.set(videoId, ids);
+    return jsonResponse(res, comment, 201);
+  }
+
+  // COMMENTS: POST /v1/videos/:videoId/comments/:commentId/like
+  const commentLikeMatch = path.match(/^\/v1\/videos\/([^/]+)\/comments\/([^/]+)\/like$/);
+  if (commentLikeMatch && method === 'POST') {
+    const user = getUserFromToken(req);
+    if (!user) return jsonResponse(res, { error: 'Unauthorized' }, 401);
+    const comment = comments.get(commentLikeMatch[2]);
+    if (!comment) return jsonResponse(res, { error: 'Comment not found' }, 404);
+    comment.liked = !comment.liked;
+    comment.likes += comment.liked ? 1 : -1;
+    return jsonResponse(res, { liked: comment.liked, totalLikes: comment.likes });
+  }
+
+  // LIKES: POST /v1/videos/:id/like
+  const videoLikeMatch = path.match(/^\/v1\/videos\/([^/]+)\/like$/);
+  if (videoLikeMatch && method === 'POST') {
+    const user = getUserFromToken(req);
+    if (!user) return jsonResponse(res, { error: 'Unauthorized' }, 401);
+    const videoId = videoLikeMatch[1];
+    const video = videos.get(videoId);
+    if (!video) return jsonResponse(res, { error: 'Video not found' }, 404);
+    const key = `${user.id}:${videoId}`;
+    const wasLiked = videoLikes.get(key) || false;
+    videoLikes.set(key, !wasLiked);
+    video.likes += wasLiked ? -1 : 1;
+    return jsonResponse(res, { liked: !wasLiked });
+  }
+
+  // TIPS: POST /v1/tips
+  if (path === '/v1/tips' && method === 'POST') {
+    const user = getUserFromToken(req);
+    if (!user) return jsonResponse(res, { error: 'Unauthorized' }, 401);
+    const body = await parseBody(req);
+    const tip = {
+      id: randomUUID(),
+      fromUserId: user.id,
+      toUserId: body.toUserId,
+      videoId: body.videoId || null,
+      amount: body.amount,
+      signature: body.signature,
+      status: 'confirmed',
+      message: body.message || null,
+      createdAt: new Date().toISOString(),
+    };
+    tips.push(tip);
+    return jsonResponse(res, tip, 201);
+  }
+
+  // TIPS: GET /v1/users/:id/tips
+  const userTipsMatch = path.match(/^\/v1\/users\/([^/]+)\/tips$/);
+  if (userTipsMatch && method === 'GET') {
+    const userId = userTipsMatch[1];
+    const received = tips.filter((t) => t.toUserId === userId);
+    const sent = tips.filter((t) => t.fromUserId === userId);
+    return jsonResponse(res, {
+      totalReceived: received.reduce((sum, t) => sum + t.amount, 0),
+      totalSent: sent.reduce((sum, t) => sum + t.amount, 0),
+      tipCount: received.length,
+    });
+  }
+
+  // TIPS: GET /v1/videos/:id/tips
+  const videoTipsMatch = path.match(/^\/v1\/videos\/([^/]+)\/tips$/);
+  if (videoTipsMatch && method === 'GET') {
+    const videoId = videoTipsMatch[1];
+    const videoTipsList = tips.filter((t) => t.videoId === videoId);
+    return jsonResponse(res, {
+      tips: videoTipsList,
+      total: videoTipsList.reduce((sum, t) => sum + t.amount, 0),
+    });
   }
 
   // 404

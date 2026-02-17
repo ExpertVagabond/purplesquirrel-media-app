@@ -4,6 +4,8 @@ import {
   PublicKey,
   clusterApiUrl,
   LAMPORTS_PER_SOL,
+  Transaction,
+  SystemProgram,
 } from '@solana/web3.js';
 import { SOLANA_NETWORK, APP_IDENTITY } from '../constants/config';
 
@@ -68,4 +70,50 @@ export async function signMessage(message: string): Promise<string> {
 export async function getBalance(publicKey: PublicKey): Promise<number> {
   const balance = await connection.getBalance(publicKey);
   return balance / LAMPORTS_PER_SOL;
+}
+
+/**
+ * Send a SOL tip to another wallet via MWA
+ * Returns the transaction signature
+ */
+export async function sendTip(
+  recipientAddress: string,
+  lamports: number,
+): Promise<string> {
+  const bs58 = await import('bs58');
+  const encode = bs58.default?.encode ?? bs58.encode;
+
+  const recipient = new PublicKey(recipientAddress);
+  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+
+  const signature = await transact(async (wallet) => {
+    const auth = await wallet.authorize({
+      cluster: SOLANA_NETWORK,
+      identity: APP_IDENTITY,
+    });
+
+    const senderPubkey = new PublicKey(auth.accounts[0].address);
+
+    const tx = new Transaction({
+      recentBlockhash: blockhash,
+      feePayer: senderPubkey,
+    }).add(
+      SystemProgram.transfer({
+        fromPubkey: senderPubkey,
+        toPubkey: recipient,
+        lamports,
+      }),
+    );
+
+    const signed = await wallet.signAndSendTransactions({
+      transactions: [tx],
+    });
+
+    const sig = signed[0];
+    // MWA may return string (base64) or Uint8Array depending on version
+    if (typeof sig === 'string') return sig;
+    return encode(sig as Uint8Array);
+  });
+
+  return signature;
 }

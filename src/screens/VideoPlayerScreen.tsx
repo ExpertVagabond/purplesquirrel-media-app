@@ -12,6 +12,9 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import VideoPlayer from '../components/VideoPlayer';
+import LikeButton from '../components/LikeButton';
+import TipCreatorButton from '../components/TipCreatorButton';
+import CommentsSection from '../components/CommentsSection';
 import * as videosApi from '../lib/api/videos';
 import type { RootStackParamList } from '../types/navigation';
 import { colors, spacing, borderRadius, fontSize } from '../constants/theme';
@@ -59,7 +62,15 @@ export default function VideoPlayerScreen() {
           <Text style={styles.meta}>
             {video.views} views
           </Text>
-          <Text style={styles.meta}>{video.likes} likes</Text>
+          <View style={styles.actionRow}>
+            <LikeButton videoId={video.id} initialLikes={video.likes} />
+            <TipCreatorButton
+              creatorId={video.creator.id}
+              creatorWallet={video.creator.walletAddress}
+              creatorName={video.creator.username ?? video.creator.walletAddress.slice(0, 8)}
+              videoId={video.id}
+            />
+          </View>
         </View>
 
         <TouchableOpacity
@@ -94,6 +105,8 @@ export default function VideoPlayerScreen() {
           </View>
         )}
       </View>
+
+      <CommentsSection videoId={video.id} />
     </ScrollView>
   );
 }
@@ -130,8 +143,13 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: 'row',
-    gap: spacing.lg,
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.lg,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
   meta: {
     fontSize: fontSize.sm,
