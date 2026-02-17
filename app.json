@@ -42,6 +42,12 @@
           "photosPermission": "Allow Purple Squirrel Media to access your photos to upload videos."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d0a662f5-e648-4295-9e9e-827608b66682"
+      }
+    },
+    "owner": "purplesquirrelmedia"
   }
 }
