@@ -36,6 +36,10 @@ yarn-error.*
 # credentials (keystore paths/passwords)
 credentials.json
 
+# publishing CLI tooling (local only)
+publishing/package.json
+publishing/package-lock.json
+
 # typescript
 *.tsbuildinfo
 

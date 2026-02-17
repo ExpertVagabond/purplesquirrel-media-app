@@ -8,7 +8,7 @@ app:
   package: "com.purplesquirrelmedia.app"
 
   # Short description (80 chars max)
-  short_description: "Upload, share, and watch videos on a decentralized platform"
+  short_description: "Upload, watch, and tip creators with SOL on decentralized video"
 
   # Long description
   long_description: |
@@ -18,6 +18,8 @@ app:
     - Connect with your Solana wallet (MWA) for passwordless authentication
     - Upload videos directly from your camera or gallery
     - Watch HLS adaptive bitrate streams
+    - Tip your favorite creators with SOL directly on-chain
+    - Like videos and join the conversation with comments
     - Explore trending videos and discover creators
     - Manage your channel and track your content
 
@@ -31,7 +33,11 @@ app:
   media:
     icon: "media/icon.png"
     banner: "media/banner.png"
-    screenshots: []  # TODO: Add actual device screenshots
+    screenshots:
+      - "media/screenshot-1-connect.png"
+      - "media/screenshot-2-feed.png"
+      - "media/screenshot-3-player.png"
+      - "media/screenshot-4-upload.png"
 
   urls:
     website: "https://purplesquirrel.media"
