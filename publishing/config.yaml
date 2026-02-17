@@ -1,0 +1,44 @@
+publisher:
+  name: "Purple Squirrel Media LLC"
+  address: "FiXme" # Replace with actual publisher address from Solana dApp Store
+  website: "https://purplesquirrel.media"
+
+app:
+  name: "Purple Squirrel Media"
+  package: "com.purplesquirrelmedia.app"
+
+  # Short description (80 chars max)
+  short_description: "Upload, share, and watch videos on a decentralized platform"
+
+  # Long description
+  long_description: |
+    Purple Squirrel Media is a decentralized video sharing platform built on Solana.
+
+    Features:
+    - Connect with your Solana wallet (MWA) for passwordless authentication
+    - Upload videos directly from your camera or gallery
+    - Watch HLS adaptive bitrate streams
+    - Explore trending videos and discover creators
+    - Manage your channel and track your content
+
+    Built for the Solana Mobile ecosystem. Your content, your keys, your platform.
+
+  category: "social"
+
+  # Solana dApp Store specific
+  solana_mobile_dapp_publisher_portal: true
+
+  media:
+    icon: "media/icon.png"
+    banner: "media/banner.png"
+    screenshots: []  # TODO: Add actual device screenshots
+
+  urls:
+    website: "https://purplesquirrel.media"
+    privacy_policy: "https://purplesquirrel.media/privacy"
+    terms_of_service: "https://purplesquirrel.media/terms"
+
+  release:
+    version: "1.0.0"
+    version_code: 1
+    android_package: "com.purplesquirrelmedia.app"
