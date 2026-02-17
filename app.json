@@ -41,7 +41,8 @@
         {
           "photosPermission": "Allow Purple Squirrel Media to access your photos to upload videos."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {
